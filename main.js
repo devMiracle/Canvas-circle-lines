@@ -1,3 +1,13 @@
+
+document.oncontextmenu = (e) => {
+    return false
+}
+
+const viewState = {
+    'nodes': [],
+    'connections': []
+}
+
 function rand(min, max) {
     min = Math.ceil(min)
     max = Math.floor(max)
@@ -5,25 +15,86 @@ function rand(min, max) {
 }
 
 
-$('canvas').drawImage({
-    layer: true,
-    source: 'test.png',
-    x: 50, 
-    y: 50,
-    width: 50,
-    height: 50,
-    click: function(layer) {
-        $(this).animateLayer(layer, {
-            rotate: '+=180'
-        })
-        $('canvas').drawArc({
-            layer: false,
-            draggable: true,
-            bringToFront: true,
-            fillStyle: `rgb(${rand(0, 256)},${rand(0, 256)},${rand(0, 256)})`,
-            x: rand(100, 900),
-            y: rand(100, 900),
-            radius: 50
-        })
-    }
-})
+
+
+
+const drawCanvas = () => {
+    $('canvas').drawImage({
+        layer: true,
+        source: 'test.png',
+        x: 50,
+        y: 50,
+        width: 50,
+        height: 50,
+        click: function (layer) {
+            $(this).animateLayer(layer, {
+                rotate: '+=180'
+            })
+            viewState.nodes.push({
+                'fill': `rgb(${rand(0, 256)},${rand(0, 256)},${rand(0, 256)})`,
+                'x': rand(100, 900),
+                'y': rand(100, 900)
+            })
+            $('canvas').removeLayers()
+            drawCanvas()
+
+            viewState.connections.forEach(conn => {
+                $('canvas').drawLine({
+                    layer: true,
+                    strokeStyle: '#000',
+                    strokeWidth: 3,
+                    bringToFront: false,
+                    x1: conn.fromNode.x, y1: conn.fromNode.y,
+                    x2: conn.toNode.x, y2: conn.toNode.y
+                })
+            })
+            viewState.nodes.forEach(node => {
+                $('canvas').drawArc({
+                    layer: true,
+                    draggable: true,
+                    bringToFront: true,
+                    fillStyle: node.fill,
+                    x: node.x,
+                    y: node.y,
+                    radius: 50,
+                    mousedown: (ev) => {
+                        if (ev.event.button == 2) {
+                            //right click
+                            let currentConnection = viewState.connections.filter(c => !c.toNode)[0]
+                            if (currentConnection) {
+                                if (currentConnection.fromNode !== node) {
+                                    currentConnection.toNode = node
+                                    $('canvas').drawLine({
+                                        layer: true,
+                                        bringToFront: false,
+                                        strokeStyle: '#000',
+                                        strokeWidth: 3,
+                                        x1: currentConnection.fromNode.x, y1: currentConnection.fromNode.y,
+                                        x2: currentConnection.toNode.x, y2: currentConnection.toNode.y,
+                                    })
+                                    
+                                   
+                                }
+                            } else {
+                                viewState.connections.push({
+                                    'fromNode': node
+                                })
+                            }
+                        }
+                    },
+                    drag: function() {
+                       
+                                      
+                        
+                        
+                    },
+                    dragstop: function (layer) {
+                        node.x = layer.x
+                        node.y = layer.y
+                    }
+                })
+            })
+        }
+    })
+}
+drawCanvas()
